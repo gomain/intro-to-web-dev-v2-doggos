@@ -1,0 +1,20 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    margin-bottom: 200px;
+}
+.doggos {
+    display: flex;
+    flex-wrap: wrap;
+}
+.doggos > img {
+    flex: 1 0 25%;
+    min-width: 300px;
+    max-width: 600px;
+    height: 300px;
+    object-fit: cover;
+    border: 6px solid transparent;
+}
+
+    

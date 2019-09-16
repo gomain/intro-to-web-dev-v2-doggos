@@ -7,7 +7,7 @@
 
     const DOGURL = 'https://dog.ceo/api/breeds/image/random';
 
-    const addDogButton = document.querySelector('button#add-dog');
+    const addDogButton = document.querySelector('button#add-random-dog');
     addDogButton.addEventListener('click',() => {
         fetch(DOGURL).
             then(response => response.json()).
@@ -18,7 +18,7 @@
                                     src : json.message,
                                     alt : 'Cute dog!'
                                 }));
-                setTimeout(addDogButton.scrollIntoView(),3000);
+                addDogButton.scrollIntoView();
             });
         
     });
