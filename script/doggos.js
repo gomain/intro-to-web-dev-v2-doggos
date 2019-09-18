@@ -1,10 +1,14 @@
 
 (function() {
+    
     /* monkey patch Object */
-    Object.prototype.assign = function (obj) {
-        return Object.assign(this,obj);
+    const assign = Symbol('assign');
+    Object.prototype[assign] = function (dict) {
+        return Object.assign(this,dict);
     };
-    Object.prototype.getOwnProperties = function () {
+    /** returns [ { name: ... , value: ... }, ... ] **/
+    const getOwnProperties = Symbol('getOwnProperties');
+    Object.prototype[getOwnProperties] = function () {
         return Object.getOwnPropertyNames(this).
             map(name => ({
                 name: name,
@@ -13,30 +17,146 @@
     };
 
     /* monkey patch HTMLElement */
-    HTMLElement.prototype.setAttr = function (obj) {
-        for (const prop of obj.getOwnProperties()) {
-            this.setAttribute(prop.name,prop.value);
+    const setAttributes = Symbol('setAttributes');
+    HTMLElement.prototype[setAttributes] = function (dict) {
+	if (dict instanceof Object) {
+            for (const prop of dict[getOwnProperties]()) {
+		this.setAttribute(prop.name,prop.value);
+            }
+	}
+        return this;
+    };
+    const appendChildren = Symbol('appendChildren');
+    HTMLElement.prototype[appendChildren] = function (elems) {
+        if (elems instanceof Array) {
+            elems.forEach(elem => this.appendChild(elem));
         }
         return this;
     };
 
+    /* DOM helpers */
+    const getElem = function (query) {
+	return document.querySelector(query);
+    };
+    
+    /* dict: {
+         type: 'string',
+         props: { ... },
+         attrs: { ... }
+       } */
+    const elem = function (dict) {
+        return document.createElement(dict.type)[assign](dict.props)[setAttributes](dict.attrs);
+    };
+    
+    /* dict: {
+         props: { ... },
+         attrs: { ... }
+       } */
+    const img = function (dict) {
+        return elem({ type: 'img' }[assign](dict));
+    };
+    const option = function (dict) {
+        return elem({ type: 'option' }[assign](dict));
+    };
+    
+    /* dict : {
+         props: { ... },
+         attrs: { ... },
+         options: [ { ... }, ... ]
+       } */       
+    const optionGroup = function (dict) {
+        return elem({ type: 'optGroup' }[assign]({ props: dict.props, attrs: dict.attrs }))[
+            appendChildren](dict.options instanceof Array ?
+                            dict.options.map(option) :
+                            undefined );
+    };
+    /* dict: {
+         props: { name: value, ... },
+         attrs: { name: value, ... },
+         options: [ { option }, ... }
+       } */
+    const select = function(dict) {
+        return elem({ type: 'select'}[assign]({ props: dict.props, attrs: dict.attrs }))[
+            appendChildren](dict.options instanceof Array ?
+                            dict.options.map(opt => opt.options instanceof Array ?
+                                             optionGroup(opt) : option(opt)) :
+                            undefined);
+    };
+    
+    /* test DOM helpers 
+    getElem('#test-select').appendChild(select({
+        options: [
+            {
+                props: {
+                    value: 'option-1-value',
+                    label: 'option-1-label',
+                    innerText: 'option-1'
+                },
+                attrs: {
+                    optionType: 'level-1'
+                }
+            },{
+                props: {
+                    value: 'option-2-value',
+                    label: 'option-2-label',
+                    innerText: 'option-2'
+                },
+                attrs: {
+                    optionType: 'level-1'
+                }
+            },{
+                props: {
+                    label: 'option-3'
+                },
+                options: [{
+                    props: {
+                        value: 'option-3.1-value',
+                        label: 'option-3.1-label',
+                        innerText: 'option-3.1'
+                    },
+                    attrs: {
+                        optionType: 'level-2'
+                    }
+                },{
+                    props: {
+                        value: 'option-3.2-value',
+                        label: 'option-3.2-label',
+                        innerText: 'option-3.2'
+                    },
+                    attrs: {
+                        optionType: 'level-2'
+                    }
+                }]
+            },{
+                props: {
+                    value: 'option-4-value',
+                    label: 'option-4-label',
+                    innerText: 'option-4'
+                },
+                attrs: {
+                    optionType: 'level-1'
+                }
+            }]
+    }));
+    */
+    
     const DOGURL = 'https://dog.ceo/api/breeds/image/random';
 
-    const addDogButton = document.querySelector('button#add-dog');
+    const addDogButton = getElem('button#add-dog');
     addDogButton.addEventListener('click',() => {
         fetch(DOGURL).
             then(response => response.json()).
             then(json => {
-                document.querySelector('.doggos').
-                    appendChild(document.createElement('img').
-                                assign({
-                                    src : json.message,
-                                    alt : 'Cute doggo!'
-                                }));
-                addDogButton.scrollIntoView();
-            });
-        
+                getElem('.doggos').
+                    appendChild(img({
+                        src : json.message,
+                        alt : 'Cute doggo!'
+                    }));
+                
+            }).
+	    then(() => addDogButton.scrollIntoView());
     });
+    
     addDogButton.focus();
     
     /* build breed select list */
@@ -46,63 +166,32 @@
             then(response => response.json()).
             then(json => {
                 console.log(json);
-                const breedList = json.message;
-                const select = document.querySelector('select#breed-list');
-                select.appendChild(document.createElement('option').
-                                   assign({
-                                       value: 'anyBreed',
-                                       selected: true,
-                                       innerText: 'any doggo'
-                                   }).setAttr({
-                                       optionType: 'any'
-                                   }));
-                for(const breed in breedList) {
-                    if (breedList.hasOwnProperty(breed)){
-                        const subBreeds = json.message[breed];
-                        select.appendChild((() => {
-                            switch (subBreeds.length) {
-                            case 0:
-                                return document.createElement('option').
-                                    assign({
-                                        value: breed,
-                                        innerText: breed
-                                    }).setAttr({
-                                        optionType: 'breed'
-                                    });
-                            case 1:
-                                return document.createElement('option').
-                                    assign({
-                                        value: breed,
-                                        innerText: breed + ' ' + subBreeds[0]
-                                    }).setAttr({
-                                        optionType: 'subBreed'
-                                    });
-                            default:
-                                const group = document.createElement('optgroup').
-                                      assign({
-                                          label: breed
-                                      });
-                                group.appendChild(document.createElement('option').
-                                                  assign({
-                                                      value: breed,
-                                                      innerText: 'any '+breed
-                                                  }).setAttr({
-                                                      optionType: 'breed'
-                                                  }));
-                                for (const subBreed of subBreeds) {
-                                    group.appendChild(document.createElement('option').
-                                                      assign({
-                                                          value: subBreed,
-                                                          innerText: subBreed
-                                                      }).setAttr({
-                                                          optionType: 'subBreed'
-                                                      }));
+                getElem('#breed-list').appendChild(select({
+                    options: json.message[getOwnProperties]().map( breed => (
+                        breed.value.length ? {
+                            props: {
+                                label: breed.name
+                            },
+                            options: breed.value.map(subBreed => ({
+                                props: {
+                                    value: subBreed,
+                                    innerText: subBreed
+                                },
+                                attrs: {
+                                    optionType: 'sub-breed'
                                 }
-                                return group;
+                            }))
+                        } : {
+                            props: {
+                                label: breed.name,
+                                value: breed.name,
+                                innerText: breed.name
+                            },
+                            attrs: {
+                                optionType: 'breed'
                             }
-                        })());
-                    };
-                } 
+                        }))
+                }));
             });
     })();
 
