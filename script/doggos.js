@@ -174,7 +174,7 @@
                         props: {
                             disabled: true,
                             selected: true,
-                            innerText: 'Pick a goggo...'
+                            innerText: 'Pick a doggo...'
                         }
                     },{
                         props: {
@@ -183,7 +183,7 @@
                             innerText: 'any doggo'
                         },
                         attrs: {
-                            optionType: 'any'
+                            optionType: 'random'
                         }
                     }].concat(json.message[getOwnProperties]().map( breed => (
                         breed.value.length ? {
@@ -197,7 +197,8 @@
                                     innerText: 'any '+breed.name
                                 },
                                 attrs: {
-                                    optionType: 'breed'
+                                    optionType: 'breed',
+                                    breed: breed.name
                                 }
                             }].concat(breed.value.map(subBreed => ({
                                 props: {
@@ -206,7 +207,9 @@
                                     innerText: subBreed
                                 },
                                 attrs: {
-                                    optionType: 'sub-breed'
+                                    optionType: 'sub-breed',
+                                    breed: breed.name,
+                                    subBreed: subBreed
                                 }
                             })))
                         } : {
@@ -216,7 +219,8 @@
                                 innerText: breed.name
                             },
                             attrs: {
-                                optionType: 'breed'
+                                optionType: 'breed',
+                                breed: breed.name
                             }
                         })))
                 }));
