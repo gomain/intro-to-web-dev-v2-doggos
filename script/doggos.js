@@ -1,5 +1,6 @@
 
 (function() {
+    'use strict'
     
     /* monkey patch Object */
     const assign = Symbol('assign');
@@ -27,9 +28,9 @@
         return this;
     };
     const appendChildren = Symbol('appendChildren');
-    HTMLElement.prototype[appendChildren] = function (elems) {
-        if (elems instanceof Array) {
-            elems.forEach(elem => this.appendChild(elem));
+    HTMLElement.prototype[appendChildren] = function (htmlElements) {
+        if (htmlElements instanceof Array) {
+            htmlElements.forEach(elem => this.appendChild(elem));
         }
         return this;
     };
@@ -147,10 +148,12 @@
         fetch(DOGURL).
             then(response => response.json()).
             then(json => {
-                getElem('.doggos').
+                getElem('#doggo-gallery').
                     appendChild(img({
-                        src : json.message,
-                        alt : 'Cute doggo!'
+                        props: {
+                            src : json.message,
+                            alt : 'Cute doggo!'
+                        }
                     }));
                 
             }).
@@ -161,26 +164,51 @@
     
     /* build breed select list */
     (function () {
-        breedListUrl = 'https://dog.ceo/api/breeds/list/all';
+        const breedListUrl = 'https://dog.ceo/api/breeds/list/all';
         fetch(breedListUrl).
             then(response => response.json()).
             then(json => {
                 console.log(json);
                 getElem('#breed-list').appendChild(select({
-                    options: json.message[getOwnProperties]().map( breed => (
+                    options: [{
+                        props: {
+                            disabled: true,
+                            selected: true,
+                            innerText: 'Pick a goggo...'
+                        }
+                    },{
+                        props: {
+                            label: 'any',
+                            value: 'any',
+                            innerText: 'any doggo'
+                        },
+                        attrs: {
+                            optionType: 'any'
+                        }
+                    }].concat(json.message[getOwnProperties]().map( breed => (
                         breed.value.length ? {
                             props: {
                                 label: breed.name
                             },
-                            options: breed.value.map(subBreed => ({
+                            options: [{
                                 props: {
+                                    label: breed.name,
+                                    value: breed.name,
+                                    innerText: 'any '+breed.name
+                                },
+                                attrs: {
+                                    optionType: 'breed'
+                                }
+                            }].concat(breed.value.map(subBreed => ({
+                                props: {
+                                    label: subBreed,
                                     value: subBreed,
                                     innerText: subBreed
                                 },
                                 attrs: {
                                     optionType: 'sub-breed'
                                 }
-                            }))
+                            })))
                         } : {
                             props: {
                                 label: breed.name,
@@ -190,7 +218,7 @@
                             attrs: {
                                 optionType: 'breed'
                             }
-                        }))
+                        })))
                 }));
             });
     })();

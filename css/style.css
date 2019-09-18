@@ -3,6 +3,7 @@
 }
 body {
     margin-bottom: 200px;
+    background-color: beige;
 }
 .doggos {
     display: flex;
