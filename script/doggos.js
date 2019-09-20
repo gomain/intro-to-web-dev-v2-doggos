@@ -18,9 +18,18 @@
         return Object.entries(this);
     };
 
-    /* monkey patch HTMLElement */
+    /* monkey patch DOM objects */
+    const getAttributes = Symbol('getAttributes');
+    Element.prototype[getAttributes] = function () {
+        const attrs = {};
+        for (const attr of this.getAttributeNames()) {
+            attrs[assign]({ [attr]: this.getAttribute(attr) });
+        };
+        return attrs;
+    };
+
     const setAttributes = Symbol('setAttributes');
-    HTMLElement.prototype[setAttributes] = function (attrs) {
+    Element.prototype[setAttributes] = function (attrs) {
 	if (attrs instanceof Object) {
             for (const [attr,value] of attrs[entries]()) {
 		this.setAttribute(attr,value);
@@ -29,7 +38,7 @@
         return this;
     };
     const appendChildren = Symbol('appendChildren');
-    HTMLElement.prototype[appendChildren] = function (htmlElements) {
+    Node.prototype[appendChildren] = function (htmlElements) {
         if (htmlElements instanceof Array) {
             htmlElements.forEach(elem => this.appendChild(elem));
         }
@@ -87,122 +96,160 @@
     };
 
 
-        /* build breed select list */
-        function buildBreedSelectList() {
+    /* build breed select list */
+    function buildBreedSelectList() {
 
-            function selectOptions(dict) {
-                return dict[entries]().map( ([breed,breeds]) =>
-                    (breeds.length === 0 ?
-                     breedOption(breed) :
-                     breedOptionGroup(breed,breeds)));
+        function selectOptions(dict) {
+            return dict[entries]().map( ([breed,breeds]) =>
+                (breeds.length === 0 ?
+                 breedOption(breed) :
+                 breedOptionGroup(breed,breeds)));
+        };
+
+        function breedOption(breed) {
+            return {
+                props: {
+                    label: breed,
+                    value: breed,
+                    innerText: breed
+                },
+                attrs: {
+                    optionType: 'breed',
+                    breed: breed
+                }
             };
+        };
 
-            function breedOption(breed) {
-                return {
+        function breedOptionGroup(breed,breeds) {
+            return {
+                props: {
+                    label: breed
+                },
+                options: [{
                     props: {
                         label: breed,
                         value: breed,
-                        innerText: breed
+                        innerText: 'any '+breed
                     },
                     attrs: {
                         optionType: 'breed',
                         breed: breed
                     }
-                };
+                }].concat(breeds.map(subBreedOption.bind(null,breed)))
             };
+        };
 
-            function breedOptionGroup(breed,breeds) {
-                return {
-                    props: {
-                        label: breed
-                    },
-                    options: [{
-                        props: {
-                            label: breed,
-                            value: breed,
-                            innerText: 'any '+breed
-                        },
-                        attrs: {
-                            optionType: 'breed',
-                            breed: breed
-                        }
-                    }].concat(breeds.map(subBreedOption.bind(null,breed)))
-                };
-            };
-
-            function subBreedOption (breed,subBreed) {
-                return {
-                    props: {
-                        label: subBreed,
-                        value: subBreed,
-                        innerText: subBreed
-                    },
-                    attrs: {
-                        optionType: 'sub-breed',
-                        breed: breed,
-                        subBreed: subBreed
-                    }
-                };
-            };
-
-            const breedListUrl = 'https://dog.ceo/api/breeds/list/all';
-            const pickADoggo = {
+        function subBreedOption (breed,subBreed) {
+            return {
                 props: {
-                    disabled: true,
-                    selected: true,
-                    innerText: 'Pick a doggo...'
-                }
-            };
-            const anyDoggo = {
-                props: {
-                    label: 'any',
-                    value: 'any',
-                    innerText: 'any doggo'
+                    label: subBreed,
+                    value: subBreed,
+                    innerText: subBreed
                 },
                 attrs: {
-                    optionType: 'random'
+                    optionType: 'sub-breed',
+                    breed: breed,
+                    subBreed: subBreed
                 }
             };
-
-            fetch(breedListUrl)
-                .then(response => response.json())
-                .then(json => {
-                    console.log(json);
-                    getElem('#breed-list').appendChild(select({
-                        options: [pickADoggo,anyDoggo]
-                            .concat(selectOptions(json.message))
-                    }));
-                });
         };
 
-        function buildAddDogButton() {
+        const breedListUrl = 'https://dog.ceo/api/breeds/list/all';
+        const pickADoggo = {
+            props: {
+                disabled: true,
+                selected: true,
+                innerText: 'Pick a doggo...'
+            }
+        };
+        const anyDoggo = {
+            props: {
+                label: 'any',
+                value: 'any',
+                innerText: 'any doggo'
+            },
+            attrs: {
+                optionType: 'random'
+            }
+        };
 
-            function addDog() {
-                fetch(DOGURL)
-                    .then(response => response.json())
-                    .then(json => {
-                        getElem('#doggo-gallery')
-                            .appendChild(img({
-                                props: {
-                                    src : json.message,
-                                    alt : 'Cute doggo!'
-                                }
-                            }));
+        fetch(breedListUrl)
+            .then(response => response.json())
+            .then(json => {
+                console.log(json);
+                getElem('#breed-list').appendChild(select({
+                    options: [pickADoggo,anyDoggo]
+                        .concat(selectOptions(json.message))
+                }));
+            });
+    };
 
-                    })
-                    .then(() => addDogButton.scrollIntoView())
-                    .then(() => addDogButton.focus);
-            };
+    function buildAddDogButton() {
 
+        function addDog() {
+            const selectedOption = getElem('select').selectedOptions[0];
+            console.log(selectedOption);
+            const selectedOptionAttributes = selectedOption[getAttributes]();
+            console.log(selectedOptionAttributes);
+            const {
+                disabled,
+                optiontype: optionType,
+                breed,
+                subbreed: subBreed
+            } = selectedOptionAttributes;
+            console.log({
+                disabled,
+                optionType,
+                breed,
+                subBreed
+            });
 
-            const DOGURL = 'https://dog.ceo/api/breeds/image/random';
-
-            const addDogButton = getElem('button#add-dog');
-            addDogButton.addEventListener('click',addDog);
+            switch (optionType) {
+                case 'random':
+                    fetch(DOGURL)
+                        .then(response => response.json())
+                        .then(json => addImageToGallery(json.message))
+                        .then(() => addDogButton.scrollIntoView());
+                    break;
+                case 'breed':
+                    fetch(`https://dog.ceo/api/breed/${breed}/images/random`)
+                        .then(response => response.json())
+                        .then(json => addImageToGallery(json.message))
+                        .then(() => addDogButton.scrollIntoView());
+                    break;
+                case 'sub-breed':
+                    fetch(`https://dog.ceo/api/breed/${breed}/${subBreed}/images/random`)
+                        .then(response => response.json())
+                        .then(json => addImageToGallery(json.message))
+                        .then(() => addDogButton.scrollIntoView());
+                    break;
+                default:
+                    alert("Pick a Doggo...!");
+            }
 
         };
 
-        buildBreedSelectList();
-        buildAddDogButton();
+        const DOGURL = 'https://dog.ceo/api/breeds/image/random';
 
-    })();
+        const addDogButton = getElem('button#add-dog');
+        addDogButton.addEventListener('click',addDog);
+        addDogButton.focus;
+
+    };
+
+    function addImageToGallery(url) {
+        getElem('#doggo-gallery')
+            .appendChild(img({
+                props: {
+                    src : url,
+                    alt : 'Cute doggo!'
+                }
+            }));
+
+    };
+
+
+    buildBreedSelectList();
+    buildAddDogButton();
+
+})();
