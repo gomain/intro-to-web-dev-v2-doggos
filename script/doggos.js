@@ -18,6 +18,12 @@
         return Object.entries(this);
     };
 
+    const beAppliedTo = Symbol('beAppliedTo');
+    Object.prototype[beAppliedTo] = function (f) {
+        console.log(this);
+        return f(this);
+    };
+
     /* monkey patch DOM objects */
     const getAttributes = Symbol('getAttributes');
     Element.prototype[getAttributes] = function () {
@@ -27,6 +33,11 @@
         };
         return attrs;
     };
+
+    const attributes = Symbol('attributes');
+    Object.defineProperty(Element.prototype,attributes,{get: function () {
+        return this[getAttributes]();
+    }});
 
     const setAttributes = Symbol('setAttributes');
     Element.prototype[setAttributes] = function (attrs) {
@@ -184,52 +195,58 @@
             });
     };
 
+
+    function switchEx({testEx, cases, defaultEx = undefined} = {}) {
+        for (const {caseEx,returnEx} of cases) {
+            if (caseEx === testEx) {
+                return returnEx;
+            };
+        };
+        return defaultEx;
+    };
+
     function buildAddDogButton() {
 
         function addDog() {
-            const selectedOption = getElem('select').selectedOptions[0];
-            console.log(selectedOption);
-            const selectedOptionAttributes = selectedOption[getAttributes]();
-            console.log(selectedOptionAttributes);
+            const self = this;
+
             const {
-                disabled,
                 optiontype: optionType,
                 breed,
                 subbreed: subBreed
-            } = selectedOptionAttributes;
-            console.log({
-                disabled,
-                optionType,
-                breed,
-                subBreed
-            });
+            } = getElem('select').selectedOptions[0][attributes];
 
-            switch (optionType) {
-                case 'random':
-                    fetch(DOGURL)
-                        .then(response => response.json())
-                        .then(json => addImageToGallery(json.message))
-                        .then(() => addDogButton.scrollIntoView());
-                    break;
-                case 'breed':
-                    fetch(`https://dog.ceo/api/breed/${breed}/images/random`)
-                        .then(response => response.json())
-                        .then(json => addImageToGallery(json.message))
-                        .then(() => addDogButton.scrollIntoView());
-                    break;
-                case 'sub-breed':
-                    fetch(`https://dog.ceo/api/breed/${breed}/${subBreed}/images/random`)
-                        .then(response => response.json())
-                        .then(json => addImageToGallery(json.message))
-                        .then(() => addDogButton.scrollIntoView());
-                    break;
-                default:
-                    alert("Pick a Doggo...!");
-            }
+            switchEx({
+                testEx: optionType,
+                cases: [['random','https://dog.ceo/api/breeds/image/random'],
+                        ['breed',`https://dog.ceo/api/breed/${breed}/images/random`],
+                        ['sub-breed',`https://dog.ceo/api/breed/${breed}/${subBreed}/images/random`]]
+                    .map( ([caseEx,url]) => ({ caseEx, returnEx: new URL(url) }) ),
+                defaultEx: {}
+            })[beAppliedTo](Promise.resolve.bind(Promise))
+                .then(url => {
+                    if (url instanceof URL){
+                        return fetch(url);
+                    } else {
+                        throw `Url is of type: ${typeof url}`;
+                    }
+                })
+                .then(getImageUrl)
+                .then(addImageToGallery)
+                .then(scrollIntoView)
+                .catch(e => { console.error(e); alert('Pick a Doggo...!'); });
+
+            function getImageUrl(response) {
+                return response.json().then(json => Promise.resolve(json.message));
+            };
+
+            function scrollIntoView() {
+                self.scrollIntoView();
+            };
+
+
 
         };
-
-        const DOGURL = 'https://dog.ceo/api/breeds/image/random';
 
         const addDogButton = getElem('button#add-dog');
         addDogButton.addEventListener('click',addDog);
