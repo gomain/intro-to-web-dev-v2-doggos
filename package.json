@@ -1,0 +1,19 @@
+{
+    "name": "doggoes",
+    "version": "1.0.0",
+    "description": "Assignment project #2 of the intro-to-web-dev-V2 course.",
+    "main": "index.js",
+    "scripts": {
+        "test": "eslint ./script/"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/gomain/intro-to-web-dev-v2-doggos.git"
+    },
+    "author": "gomain@gmail.com",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/gomain/intro-to-web-dev-v2-doggos/issues"
+    },
+    "homepage": "https://github.com/gomain/intro-to-web-dev-v2-doggos#readme"
+}
