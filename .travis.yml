@@ -3,3 +3,9 @@ node_js:
   - "8"
 before_install:
   - "npm install eslint"
+  - "npm install cypress"
+before-script:
+  - "npm run lint"
+  - "serve"
+script:
+  - "cypress run"
