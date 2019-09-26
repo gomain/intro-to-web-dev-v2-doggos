@@ -4,7 +4,8 @@
   "description": "Assignment project #2 of the intro-to-web-dev-V2 course.",
   "main": "index.js",
   "scripts": {
-    "list": "eslint ./script/"
+    "lint": "eslint ./script/",
+    "test": "cypress run"
   },
   "repository": {
     "type": "git",
@@ -17,9 +18,10 @@
   },
   "homepage": "https://github.com/gomain/intro-to-web-dev-v2-doggos#readme",
   "dependencies": {
-    "serve": "*"
+
   },
   "devDependencies": {
-    "cypress": "^3.4.1"
+    "eslint": "*",
+    "serve": "*"
   }
 }
