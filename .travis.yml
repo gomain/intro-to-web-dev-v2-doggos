@@ -9,11 +9,7 @@ cache:
   directories:
     - ~/.cache
 install:
-<<<<<<< HEAD
-  - "npm install cypress@3.4.1 --no-save"
-=======
   - "npm install -g cypress-3.4.1"
->>>>>>> parent of 8fc28cb... Npm: remove cypress dev-depends. Travis: install cypress global.
   - "npm install"
 before_script:
   - "npm run lint"
