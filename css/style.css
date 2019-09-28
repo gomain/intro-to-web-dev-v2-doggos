@@ -16,6 +16,7 @@ body {
     height: 300px;
     object-fit: cover;
     border: 6px solid transparent;
+    background: url("../images/lg.ajax-spinner-gif.gif") no-repeat center;
 }
 
     

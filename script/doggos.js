@@ -7,6 +7,7 @@
   Object.prototype[assign] = function (dict) {
     return Object.assign(this,dict);
   };
+    
   /** return: { <<name>> : <<value>>, ... } **/
   const keys = Symbol('keys');
   Object.prototype[keys] = function () {
@@ -44,8 +45,8 @@
     if (attrs instanceof Object) {
       for (const [attr,value] of attrs[entries]()) {
         this.setAttribute(attr,value);
-      }
-    }
+      };
+    };
     return this;
 
   };
