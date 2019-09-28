@@ -15,5 +15,5 @@ before_script:
   - "npm run lint"
   - "serve --no-clipboard &"
 script:
-  - "cypress run"
+  - "$(npm bin)/cypress run"
   - kill $(jobs -p) || true
