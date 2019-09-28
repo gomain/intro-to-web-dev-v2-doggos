@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "eslint": "5",
-    "serve": "*",
-    "cypress": "3.4.1"
+    "serve": "*"
   }
 }
