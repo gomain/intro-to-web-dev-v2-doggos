@@ -9,7 +9,7 @@ cache:
   directories:
     - ~/.cache
 install:
-  - "npm install cypress-3.4.1 --no-save"
+  - "npm install cypress@3.4.1 --no-save"
   - "npm install"
 before_script:
   - "npm run lint"
