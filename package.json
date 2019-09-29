@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint ./script/",
-    "test": "cypress run"
+    "test": "CYPRESS_RUN_BINARY=`which Cypress` cypress run"
   },
   "repository": {
     "type": "git",
