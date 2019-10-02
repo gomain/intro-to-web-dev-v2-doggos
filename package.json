@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint ./script/",
+    "start": "serve",
     "test": "CYPRESS_RUN_BINARY=`which Cypress` cypress run"
   },
   "repository": {
@@ -17,11 +18,10 @@
     "url": "https://github.com/gomain/intro-to-web-dev-v2-doggos/issues"
   },
   "homepage": "https://github.com/gomain/intro-to-web-dev-v2-doggos#readme",
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "devDependencies": {
     "eslint": "5",
+    "parcel-bundler": "1.12.3",
     "serve": "*"
   }
 }
